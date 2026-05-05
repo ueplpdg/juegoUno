@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desafío de Lógica Pro - 25 Niveles</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: white;
+        }
+        .container {
+            background: rgba(0, 20, 40, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 1400px;
+            width: 100%;
+            border: 3px solid #00d4ff;
+            box-shadow: 0 10px 50px rgba(0, 212, 255, 0.3);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .header h1 { 
+            color: #00d4ff; 
+            font-size: 2.5em; 
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
+            margin-bottom: 10px;
+        }
+        .stats-header {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(0, 50, 100, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .stat-box {
+            text-align: center;
+        }
+        .stat-label {
+            font-size: 0.9em;
+            color: #88ddff;
+            margin-bottom: 5px;
+        }
+        .stat-number {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #ffd700;
+        }
+        .timer {
+            color: #00ff88;
+        }
+        .level-info {
+            background: linear-gradient(145deg, rgba(0, 50, 100, 0.6), rgba(0, 30, 80, 0.6));
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border: 2px solid rgba(0, 212, 255, 0.3);
+        }
+        .level-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .level-title { 
+            font-size: 1.6em; 
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+        .energy-bar-container {
+            width: 200px;
+            height: 25px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid #00d4ff;
+        }
+        .energy-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88, #00d4ff);
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        .objective {
+            background: rgba(255, 165, 0, 0.15);
+            border-left: 4px solid #ffa500;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .objective h3 { 
+            color: #ffa500; 
+            margin-bottom: 8px;
+            font-size: 1.2em;
+        }
+        .game-grid {
+            display: grid;
+            gap: 2px;
+            background: #000;
+            padding: 5px;
+            border-radius: 15px;
+            margin: 20px auto;
+            width: fit-content;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.4);
+        }
+        .cell {
+            width: 55px;
+            height: 55px;
+            background: #2d5016;
+            border: 1px solid #3a6b1f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .cell:hover {
+            transform: scale(1.05);
+        }
+        .cell.goal { 
+            background: radial-gradient(circle, #ff4444 0%, #cc0000 100%);
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 10px rgba(255, 68, 68, 0.5); }
+            50% { box-shadow: 0 0 25px rgba(255, 68, 68, 1); }
+        }
+        .cell.trap { 
+            background: radial-gradient(circle, #1a0033 0%, #000000 100%);
+            border: 2px solid #8a2be2;
+            animation: rotate 3s linear infinite;
+        }
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .cell.player {
+            animation: glow 1s infinite;
+        }
+        @keyframes glow {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        .gem {
+            animation: float 2s ease-in-out infinite;
+            filter: drop-shadow(0 0 10px #00d4ff);
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 300px;
+            margin: 20px auto;
+        }
+        .btn-control {
+            background: linear-gradient(145deg, #1e3a8a, #1e40af);
+            border: 2px solid #3b82f6;
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 1.3em;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+        .btn-control:hover { 
+            background: linear-gradient(145deg, #2563eb, #3b82f6);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+        }
+        .btn-control:active {
+            transform: translateY(0);
+        }
+        .btn-control.empty { 
+            background: transparent; 
+            border: none;
+            box-shadow: none;
+            cursor: default;
+        }
+        .command-area { 
+            background: rgba(0, 30, 60, 0.7);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 212, 255, 0.3);
+        }
+        .command-input {
+            width: 100%;
+            background: #001a33;
+            border: 2px solid #00d4ff;
+            color: #00ff88;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.2em;
+            min-height: 90px;
+            resize: vertical;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+        .command-input:focus {
+            outline: none;
+            border-color: #00ff88;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+        .help { 
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(0, 100, 150, 0.2);
+            border-radius: 10px;
+            border-left: 4px solid #00d4ff;
+        }
+        .help h4 { 
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        .btn {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.3em;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            margin: 10px 0;
+            transition: all 0.3s;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+        .btn-run { 
+            background: linear-gradient(145deg, #10b981, #059669);
+            color: white;
+        }
+        .btn-run:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 25px rgba(16, 185, 129, 0.5);
+        }
+        .btn-reset { 
+            background: linear-gradient(145deg, #ef4444, #dc2626);
+            color: white;
+        }
+        .btn-next { 
+            background: linear-gradient(145deg, #8b5cf6, #7c3aed);
+            color: white;
+        }
+        .feedback {
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            text-align: center;
+            font-size: 1.4em;
+            font-weight: bold;
+            display: none;
+            animation: slideIn 0.3s;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .feedback.success { 
+            background: rgba(16, 185, 129, 0.2);
+            border: 2px solid #10b981;
+            color: #10b981;
+            display: block;
+        }
+        .feedback.error { 
+            background: rgba(239, 68, 68, 0.2);
+            border: 2px solid #ef4444;
+            color: #ef4444;
+            display: block;
+        }
+        .stats { 
+            background: rgba(0, 50, 100, 0.4);
+            padding: 15px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 212, 255, 0.2);
+        }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+        }
+        .stat-row:last-child { border-bottom: none; }
+        .stat-value { 
+            color: #ffd700;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .intro { 
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .intro h1 { 
+            font-size: 3.5em;
+            color: #00d4ff;
+            margin-bottom: 20px;
+            text-shadow: 0 0 30px rgba(0, 212, 255, 1);
+        }
+        .intro p { 
+            font-size: 1.4em;
+            margin: 20px 0;
+            line-height: 1.8;
+        }
+        .intro ul { 
+            text-align: left;
+            background: rgba(0, 50, 100, 0.4);
+            padding: 30px;
+            border-radius: 15px;
+            margin: 25px 0;
+            border: 2px solid rgba(0, 212, 255, 0.3);
+        }
+        .intro li { 
+            margin: 15px 0;
+            font-size: 1.2em;
+        }
+        .btn-start {
+            background: linear-gradient(145deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 25px 70px;
+            font-size: 2em;
+            font-weight: bold;
+            border-radius: 15px;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: all 0.3s;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.5);
+        }
+        .btn-start:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(16, 185, 129, 0.7);
+        }
+        .warning {
+            background: rgba(255, 0, 0, 0.2);
+            border: 2px solid #ff0000;
+            color: #ff5555;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: bold;
+            animation: blink 2s infinite;
+        }
+        @keyframes blink {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0.7; }
+        }
+        .final-stats {
+            background: rgba(0, 50, 100, 0.4);
+            padding: 30px;
+            border-radius: 15px;
+            margin: 30px 0;
+            border: 3px solid #ffd700;
+        }
+        .final-stats h2 {
+            color: #ffd700;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+        .final-stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            font-size: 1.3em;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+        }
+        .final-stat-row:last-child {
+            border-bottom: none;
+        }
+        .rank {
+            text-align: center;
+            font-size: 3em;
+            margin: 20px 0;
+        }
+        @media (max-width: 768px) { 
+            .cell { width: 45px; height: 45px; font-size: 1.5em; }
+            .header h1 { font-size: 2em; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    <script>
+        const game = {
+            currentLevel: 0,
+            pos: {x: 0, y: 0},
+            gems: [],
+            energy: 0,
+            completed: false,
+            executing: false,
+            totalScore: 0,
+            startTime: null,
+            currentLevelTime: null,
+            attempts: 0
+        };
+
+        const levels = [
+            // NIVELES 1-10: BÁSICOS
+            {id: 1, name: "Primer Paso", grid: 5, start: {x: 0, y: 0}, goal: {x: 4, y: 0}, gems: [], traps: [], maxEnergy: 5, objective: "Mueve 4 pasos a la derecha", hint: "Piensa en la dirección más directa", points: 100, loopRequired: false},
+            {id: 2, name: "Primera Gema", grid: 5, start: {x: 0, y: 0}, goal: {x: 2, y: 2}, gems: [{x: 2, y: 0}], traps: [], maxEnergy: 6, objective: "Recoge la gema y llega a meta", hint: "Forma una L: primero horizontal, luego vertical", points: 150, loopRequired: false},
+            {id: 3, name: "Diagonal", grid: 5, start: {x: 0, y: 0}, goal: {x: 3, y: 3}, gems: [{x: 1, y: 1}, {x: 2, y: 2}], traps: [], maxEnergy: 8, objective: "Sigue la diagonal recogiendo gemas", hint: "Alterna entre derecha y abajo", points: 200, loopRequired: false},
+            {id: 4, name: "Bucle Intro", grid: 6, start: {x: 0, y: 0}, goal: {x: 5, y: 0}, gems: [{x: 1, y: 0}, {x: 2, y: 0}, {x: 3, y: 0}, {x: 4, y: 0}], traps: [], maxEnergy: 6, objective: "Primera vez: usa un bucle", hint: "Repite un movimiento 5 veces", points: 250, loopRequired: false},
+            {id: 5, name: "Escalera", grid: 6, start: {x: 0, y: 0}, goal: {x: 4, y: 4}, gems: [{x: 1, y: 1}, {x: 2, y: 2}, {x: 3, y: 3}], traps: [], maxEnergy: 10, objective: "Diagonal con bucle", hint: "Repite un patrón de 2 comandos", points: 300, loopRequired: false},
+            {id: 6, name: "Trampa", grid: 6, start: {x: 0, y: 0}, goal: {x: 4, y: 2}, gems: [{x: 2, y: 1}], traps: [], maxEnergy: 8, objective: "Evita el portal oscuro", hint: "Los portales se generan aleatoriamente, ródalos", points: 350, loopRequired: false, randomTraps: 2},
+            {id: 7, name: "Zigzag", grid: 7, start: {x: 0, y: 0}, goal: {x: 6, y: 2}, gems: [{x: 2, y: 0}, {x: 4, y: 1}, {x: 6, y: 2}], traps: [], maxEnergy: 10, objective: "Patrón zigzag", hint: "Avanza 2, baja 1, repite", points: 400, loopRequired: false, randomTraps: 2},
+            {id: 8, name: "Laberinto", grid: 7, start: {x: 0, y: 0}, goal: {x: 6, y: 6}, gems: [{x: 3, y: 3}, {x: 5, y: 5}], traps: [], maxEnergy: 16, objective: "Navega el laberinto", hint: "Planifica antes de ejecutar", points: 450, loopRequired: false, randomTraps: 3},
+            {id: 9, name: "Anidados", grid: 8, start: {x: 0, y: 0}, goal: {x: 6, y: 6}, gems: [{x: 2, y: 2}, {x: 4, y: 4}, {x: 6, y: 6}], traps: [], maxEnergy: 14, objective: "Practica bucles", hint: "Repite un patrón de 4 movimientos", points: 500, loopRequired: false, randomTraps: 3},
+            {id: 10, name: "Final Básico", grid: 9, start: {x: 0, y: 0}, goal: {x: 8, y: 8}, gems: [{x: 1, y: 1}, {x: 2, y: 2}, {x: 3, y: 3}, {x: 4, y: 4}, {x: 5, y: 5}, {x: 6, y: 6}, {x: 7, y: 7}], traps: [], maxEnergy: 18, objective: "Último básico", hint: "Diagonal completa con bucle", points: 600, loopRequired: false, randomTraps: 4},
+            
+            // NIVELES 11-20: BUCLE OBLIGATORIO
+            {id: 11, name: "🔒 Código Secreto I", grid: 6, start: {x: 0, y: 0}, goal: {x: 5, y: 5}, gems: [{x: 1, y: 1}, {x: 2, y: 2}, {x: 3, y: 3}, {x: 4, y: 4}], traps: [], maxEnergy: 6, objective: "🔒 10 movimientos / 6 energía", hint: "Necesitas un patrón que se repita 5 veces", points: 800, loopRequired: true, randomTraps: 2},
+            {id: 12, name: "🔒 Código Secreto II", grid: 9, start: {x: 0, y: 0}, goal: {x: 8, y: 4}, gems: [{x: 2, y: 1}, {x: 4, y: 2}, {x: 6, y: 3}], traps: [], maxEnergy: 5, objective: "🔒 12 movimientos / 5 energía", hint: "Repite: avanza 2, baja 1", points: 900, loopRequired: true, randomTraps: 2},
+            {id: 13, name: "🔒 Código Secreto III", grid: 13, start: {x: 0, y: 0}, goal: {x: 6, y: 12}, gems: [{x: 1, y: 2}, {x: 2, y: 4}, {x: 3, y: 6}, {x: 4, y: 8}, {x: 5, y: 10}], traps: [], maxEnergy: 7, objective: "🔒 18 movimientos / 7 energía", hint: "Patrón: 1 derecha, 2 abajo", points: 1000, loopRequired: true, randomTraps: 3},
+            {id: 14, name: "🔒 Código Secreto IV", grid: 11, start: {x: 0, y: 0}, goal: {x: 10, y: 5}, gems: [{x: 2, y: 1}, {x: 4, y: 2}, {x: 6, y: 3}, {x: 8, y: 4}], traps: [], maxEnergy: 6, objective: "🔒 15 movimientos / 6 energía", hint: "Repite: 2 derecha, 1 abajo", points: 1100, loopRequired: true, randomTraps: 3},
+            {id: 15, name: "🔒 Código Secreto V", grid: 13, start: {x: 0, y: 0}, goal: {x: 12, y: 4}, gems: [{x: 3, y: 1}, {x: 6, y: 2}, {x: 9, y: 3}], traps: [], maxEnergy: 5, objective: "🔒 16 movimientos / 5 energía", hint: "Patrón de 3 derechas y 1 abajo", points: 1200, loopRequired: true, randomTraps: 4},
+            {id: 16, name: "🔒 Diagonal Maestra", grid: 13, start: {x: 0, y: 0}, goal: {x: 12, y: 12}, gems: [{x: 2, y: 2}, {x: 4, y: 4}, {x: 6, y: 6}, {x: 8, y: 8}, {x: 10, y: 10}], traps: [], maxEnergy: 7, objective: "🔒 24 movimientos / 7 energía", hint: "Diagonal con patrón de 4 movimientos", points: 1300, loopRequired: true, randomTraps: 5},
+            {id: 17, name: "🔒 Serpiente", grid: 15, start: {x: 0, y: 0}, goal: {x: 14, y: 7}, gems: [{x: 2, y: 1}, {x: 4, y: 2}, {x: 6, y: 3}, {x: 8, y: 4}, {x: 10, y: 5}, {x: 12, y: 6}], traps: [], maxEnergy: 8, objective: "🔒 21 movimientos / 8 energía", hint: "Sube como una serpiente: 2 y 1", points: 1400, loopRequired: true, randomTraps: 4},
+            {id: 18, name: "🔒 Cascada", grid: 17, start: {x: 0, y: 0}, goal: {x: 8, y: 16}, gems: [{x: 1, y: 2}, {x: 2, y: 4}, {x: 3, y: 6}, {x: 4, y: 8}, {x: 5, y: 10}, {x: 6, y: 12}, {x: 7, y: 14}], traps: [], maxEnergy: 9, objective: "🔒 24 movimientos / 9 energía", hint: "Baja en cascada: 1 derecha, 2 abajo", points: 1500, loopRequired: true, randomTraps: 4},
+            {id: 19, name: "🔒 Escalera Grande", grid: 19, start: {x: 0, y: 0}, goal: {x: 18, y: 18}, gems: [{x: 3, y: 3}, {x: 6, y: 6}, {x: 9, y: 9}, {x: 12, y: 12}, {x: 15, y: 15}], traps: [], maxEnergy: 7, objective: "🔒 36 movimientos / 7 energía", hint: "Escalera gigante: patrón de 6", points: 1600, loopRequired: true, randomTraps: 6},
+            {id: 20, name: "🔒 Épico", grid: 21, start: {x: 0, y: 0}, goal: {x: 20, y: 20}, gems: [{x: 4, y: 4}, {x: 8, y: 8}, {x: 12, y: 12}, {x: 16, y: 16}], traps: [], maxEnergy: 11, objective: "🔒 40 movimientos / 11 energía", hint: "Diagonal perfecta: 4 movimientos × 10", points: 1800, loopRequired: true, randomTraps: 5},
+            
+            // NIVELES 21-25: MAESTRÍA SUPREMA
+            {id: 21, name: "🏆 Maestro I", grid: 15, start: {x: 0, y: 0}, goal: {x: 12, y: 9}, gems: [{x: 3, y: 2}, {x: 6, y: 4}, {x: 9, y: 6}, {x: 12, y: 8}], traps: [], maxEnergy: 6, objective: "🏆 MAESTRO: 20 movimientos / 6 energía", hint: "Busca el patrón en las gemas", points: 2000, loopRequired: true, randomTraps: 5},
+            {id: 22, name: "🏆 Maestro II", grid: 17, start: {x: 0, y: 0}, goal: {x: 15, y: 12}, gems: [{x: 3, y: 2}, {x: 6, y: 4}, {x: 9, y: 6}, {x: 12, y: 8}, {x: 15, y: 10}], traps: [], maxEnergy: 7, objective: "🏆 MAESTRO: 25 movimientos / 7 energía", hint: "Avanza 3, baja 2, repite", points: 2200, loopRequired: true, randomTraps: 6},
+            {id: 23, name: "🏆 Leyenda I", grid: 20, start: {x: 0, y: 0}, goal: {x: 18, y: 15}, gems: [{x: 3, y: 2}, {x: 6, y: 4}, {x: 9, y: 7}, {x: 12, y: 9}, {x: 15, y: 12}], traps: [], maxEnergy: 8, objective: "🏆 LEYENDA: 30 movimientos / 8 energía", hint: "Patrón complejo de 5 movimientos", points: 2500, loopRequired: true, randomTraps: 7},
+            {id: 24, name: "🏆 Leyenda II", grid: 22, start: {x: 0, y: 0}, goal: {x: 20, y: 16}, gems: [{x: 4, y: 3}, {x: 8, y: 6}, {x: 12, y: 9}, {x: 16, y: 12}, {x: 20, y: 15}], traps: [], maxEnergy: 9, objective: "🏆 LEYENDA: 35 movimientos / 9 energía", hint: "Combina patrones de 4 y 3", points: 2800, loopRequired: true, randomTraps: 8},
+            {id: 25, name: "🏆 DIOS DE LA LÓGICA", grid: 25, start: {x: 0, y: 0}, goal: {x: 24, y: 24}, gems: [{x: 4, y: 4}, {x: 8, y: 8}, {x: 12, y: 12}, {x: 16, y: 16}, {x: 20, y: 20}, {x: 24, y: 24}], traps: [], maxEnergy: 13, objective: "🏆 SUPREMO: 48 movimientos / 13 energía", hint: "El patrón perfecto está en las gemas", points: 3500, loopRequired: true, randomTraps: 10}
+        ];
+
+        function generateRandomTraps(level) {
+            if (!level.randomTraps) return;
+            
+            level.traps = [];
+            const used = new Set();
+            used.add(`${level.start.x},${level.start.y}`);
+            used.add(`${level.goal.x},${level.goal.y}`);
+            level.gems.forEach(g => used.add(`${g.x},${g.y}`));
+            
+            let attempts = 0;
+            while (level.traps.length < level.randomTraps && attempts < 100) {
+                const x = Math.floor(Math.random() * level.grid);
+                const y = Math.floor(Math.random() * level.grid);
+                const key = `${x},${y}`;
+                
+                if (!used.has(key)) {
+                    level.traps.push({x, y});
+                    used.add(key);
+                }
+                attempts++;
+            }
+        }
+
+        function parseCommands(input) {
+            const result = [];
+            const str = input.toUpperCase().replace(/[\s,]/g, '');
+            
+            let i = 0;
+            while (i < str.length) {
+                if (str[i] === 'X') {
+                    let numStr = '';
+                    i++;
+                    
+                    while (i < str.length && str[i] >= '0' && str[i] <= '9') {
+                        numStr += str[i];
+                        i++;
+                    }
+                    
+                    const reps = parseInt(numStr);
+                    
+                    if (i < str.length && str[i] === '{') {
+                        i++;
+                        let content = '';
+                        let braces = 1;
+                        
+                        while (i < str.length && braces > 0) {
+                            if (str[i] === '{') braces++;
+                            else if (str[i] === '}') braces--;
+                            
+                            if (braces > 0) content += str[i];
+                            i++;
+                        }
+                        
+                        const innerCmds = parseSimple(content);
+                        result.push({type: 'loop', reps: reps, cmds: innerCmds});
+                    }
+                }
+                else if (['D', 'I', 'A', 'B'].includes(str[i])) {
+                    result.push({type: 'cmd', cmd: str[i]});
+                    i++;
+                }
+                else {
+                    i++;
+                }
+            }
+            
+            return result;
+        }
+
+        function parseSimple(str) {
+            const cmds = [];
+            for (let i = 0; i < str.length; i++) {
+                if (['D', 'I', 'A', 'B'].includes(str[i])) {
+                    cmds.push(str[i]);
+                }
+            }
+            return cmds;
+        }
+
+        async function executeCommands(parsedCmds) {
+            if (game.executing) return;
+            
+            game.executing = true;
+            game.currentLevelTime = Date.now();
+            const level = levels[game.currentLevel];
+            
+            game.pos = {...level.start};
+            game.gems = [];
+            game.energy = level.maxEnergy;
+            
+            render();
+            
+            for (let i = 0; i < parsedCmds.length; i++) {
+                const item = parsedCmds[i];
+                
+                if (item.type === 'loop') {
+                    for (let r = 0; r < item.reps; r++) {
+                        if (game.energy <= 0) {
+                            showFeedback('error', '⚡ Sin energía - NECESITAS BUCLE');
+                            game.executing = false;
+                            game.attempts++;
+                            return;
+                        }
+                        
+                        game.energy--;
+                        
+                        for (let c = 0; c < item.cmds.length; c++) {
+                            const result = await executeMove(item.cmds[c]);
+                            if (!result) {
+                                game.executing = false;
+                                game.attempts++;
+                                return;
+                            }
+                        }
+                    }
+                } else {
+                    if (game.energy <= 0) {
+                        showFeedback('error', '⚡ Sin energía - NECESITAS BUCLE');
+                        game.executing = false;
+                        game.attempts++;
+                        return;
+                    }
+                    
+                    game.energy--;
+                    const result = await executeMove(item.cmd);
+                    if (!result) {
+                        game.executing = false;
+                        game.attempts++;
+                        return;
+                    }
+                }
+            }
+            
+            checkWin();
+            game.executing = false;
+        }
+
+        async function executeMove(cmd) {
+            const level = levels[game.currentLevel];
+            const newPos = {...game.pos};
+            
+            switch(cmd) {
+                case 'D': newPos.x++; break;
+                case 'I': newPos.x--; break;
+                case 'A': newPos.y--; break;
+                case 'B': newPos.y++; break;
+            }
+            
+            if (newPos.x < 0 || newPos.x >= level.grid || newPos.y < 0 || newPos.y >= level.grid) {
+                showFeedback('error', '🚫 Fuera de límites');
+                return false;
+            }
+            
+            if (level.traps.some(t => t.x === newPos.x && t.y === newPos.y)) {
+                game.pos = newPos;
+                render();
+                await sleep(200);
+                showFeedback('error', '💀 Caíste en un portal');
+                return false;
+            }
+            
+            game.pos = newPos;
+            
+            for (let g = 0; g < level.gems.length; g++) {
+                if (level.gems[g].x === newPos.x && level.gems[g].y === newPos.y && !game.gems.includes(g)) {
+                    game.gems.push(g);
+                    break;
+                }
+            }
+            
+            render();
+            await sleep(200);
+            return true;
+        }
+
+        function checkWin() {
+            const level = levels[game.currentLevel];
+            
+            if (game.pos.x === level.goal.x && game.pos.y === level.goal.y && game.gems.length === level.gems.length) {
+                const timeBonus = Math.max(0, 500 - game.attempts * 50);
+                const energyBonus = game.energy * 20;
+                const levelScore = level.points + timeBonus + energyBonus;
+                
+                game.totalScore += levelScore;
+                game.completed = true;
+                game.attempts = 0;
+                
+                showFeedback('success', `🎉 +${levelScore} pts | Nivel ${level.id} completado!`);
+                render();
+            } else {
+                let msg = '';
+                if (game.pos.x !== level.goal.x || game.pos.y !== level.goal.y) {
+                    msg = 'No llegaste a la meta';
+                } else {
+                    msg = `Faltan ${level.gems.length - game.gems.length} gemas`;
+                }
+                showFeedback('error', '❌ ' + msg);
+                game.attempts++;
+            }
+        }
+
+        function showFeedback(type, msg) {
+            const fb = document.getElementById('feedback');
+            if (fb) {
+                fb.className = `feedback ${type}`;
+                fb.textContent = msg;
+            }
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function formatTime(ms) {
+            const secs = Math.floor(ms / 1000);
+            const mins = Math.floor(secs / 60);
+            const s = secs % 60;
+            return `${mins}:${s.toString().padStart(2, '0')}`;
+        }
+
+        function updateTimer() {
+            if (game.startTime && !game.completed) {
+                const elapsed = Date.now() - game.startTime;
+                const timerEl = document.querySelector('.timer');
+                if (timerEl) timerEl.textContent = formatTime(elapsed);
+            }
+        }
+
+        setInterval(updateTimer, 1000);
+
+        function render() {
+            const level = levels[game.currentLevel];
+            const energyPercent = (game.energy / level.maxEnergy) * 100;
+            const elapsed = game.startTime ? Date.now() - game.startTime : 0;
+            
+            document.getElementById('app').innerHTML = `
+                <div class="container">
+                    <div class="header">
+                        <h1>🥷 DESAFÍO DE LÓGICA PRO</h1>
+                    </div>
+                    
+                    <div class="stats-header">
+                        <div class="stat-box">
+                            <div class="stat-label">Puntos Totales</div>
+                            <div class="stat-number">${game.totalScore}</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Tiempo</div>
+                            <div class="stat-number timer">${formatTime(elapsed)}</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Progreso</div>
+                            <div class="stat-number">${game.currentLevel}/25</div>
+                        </div>
+                    </div>
+                    
+                    ${level.loopRequired ? '<div class="warning">🔒 BUCLE OBLIGATORIO: Sin bucle es IMPOSIBLE</div>' : ''}
+                    
+                    <div class="level-info">
+                        <div class="level-header">
+                            <div class="level-title">Nivel ${level.id}: ${level.name}</div>
+                            <div class="energy-bar-container">
+                                <div class="energy-bar" style="width: ${energyPercent}%">
+                                    ⚡ ${game.energy}/${level.maxEnergy}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="objective">
+                            <h3>🎯 Objetivo (${level.points} pts):</h3>
+                            <p>${level.objective}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="game-grid" style="grid-template-columns: repeat(${level.grid}, 55px);">
+                        ${renderGrid(level)}
+                    </div>
+                    
+                    <div class="controls">
+                        <div class="btn-control empty"></div>
+                        <button class="btn-control" onclick="addCmd('A')">↑<br>A</button>
+                        <div class="btn-control empty"></div>
+                        <button class="btn-control" onclick="addCmd('I')">←<br>I</button>
+                        <button class="btn-control" onclick="addCmd('B')">↓<br>B</button>
+                        <button class="btn-control" onclick="addCmd('D')">→<br>D</button>
+                    </div>
+                    
+                    <div class="command-area">
+                        <textarea id="cmdInput" class="command-input" placeholder="Ejemplo: X5{D,B} o D D B B"></textarea>
+                        <div class="help">
+                            <h4>💡 Pista:</h4>
+                            <div style="color: #ffd700;">${level.hint}</div>
+                            ${level.loopRequired ? '<div style="color: #ff5555; margin-top: 10px;">⚡ Los bucles X{...} consumen MENOS energía</div>' : ''}
+                        </div>
+                        <button class="btn btn-run" onclick="run()">▶️ Ejecutar Código</button>
+                        <button class="btn btn-reset" onclick="reset()">🔄 Reiniciar Nivel</button>
+                        ${game.completed ? `<button class="btn btn-next" onclick="nextLevel()">➡️ Siguiente Nivel</button>` : ''}
+                    </div>
+                    
+                    <div id="feedback" class="feedback"></div>
+                    
+                    <div class="stats">
+                        <div class="stat-row"><span>💎 Gemas:</span><span class="stat-value">${game.gems.length}/${level.gems.length}</span></div>
+                        <div class="stat-row"><span>⚡ Energía:</span><span class="stat-value">${game.energy}/${level.maxEnergy}</span></div>
+                        <div class="stat-row"><span>🎯 Intentos:</span><span class="stat-value">${game.attempts}</span></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderGrid(level) {
+            let html = '';
+            for (let y = 0; y < level.grid; y++) {
+                for (let x = 0; x < level.grid; x++) {
+                    let cls = 'cell', content = '';
+                    
+                    if (level.traps.some(t => t.x === x && t.y === y)) { 
+                        cls += ' trap'; 
+                        content = '🌀'; 
+                    }
+                    else if (level.goal.x === x && level.goal.y === y) { 
+                        cls += ' goal'; 
+                        content = '🎯'; 
+                    }
+                    
+                    let hasGem = false;
+                    for (let g = 0; g < level.gems.length; g++) {
+                        if (level.gems[g].x === x && level.gems[g].y === y && !game.gems.includes(g)) {
+                            hasGem = true;
+                            break;
+                        }
+                    }
+                    if (hasGem) content = '<span class="gem">💎</span>';
+                    
+                    if (game.pos.x === x && game.pos.y === y) content = '🥷';
+                    
+                    html += `<div class="${cls}">${content}</div>`;
+                }
+            }
+            return html;
+        }
+
+        function addCmd(cmd) {
+            const input = document.getElementById('cmdInput');
+            if (input.value.length > 0) input.value += ' ';
+            input.value += cmd;
+        }
+
+        function run() {
+            const input = document.getElementById('cmdInput').value;
+            if (!input.trim()) { 
+                showFeedback('error', '⚠️ Escribe comandos primero'); 
+                return; 
+            }
+            
+            const parsed = parseCommands(input);
+            if (parsed.length === 0) { 
+                showFeedback('error', '⚠️ Comandos inválidos'); 
+                return; 
+            }
+            
+            executeCommands(parsed);
+        }
+
+        function reset() {
+            const level = levels[game.currentLevel];
+            generateRandomTraps(level);
+            game.pos = {...level.start};
+            game.gems = [];
+            game.energy = level.maxEnergy;
+            game.completed = false;
+            render();
+        }
+
+        function nextLevel() {
+            if (game.currentLevel < levels.length - 1) {
+                game.currentLevel++;
+                const level = levels[game.currentLevel];
+                generateRandomTraps(level);
+                game.pos = {...level.start};
+                game.gems = [];
+                game.energy = level.maxEnergy;
+                game.completed = false;
+                game.attempts = 0;
+                render();
+            } else {
+                showFinalStats();
+            }
+        }
+
+        function showFinalStats() {
+            const totalTime = Date.now() - game.startTime;
+            const avgScore = Math.floor(game.totalScore / 25);
+            let rank = '';
+            
+            if (game.totalScore >= 30000) rank = '🏆 DIOS DE LA LÓGICA';
+            else if (game.totalScore >= 25000) rank = '👑 LEYENDA';
+            else if (game.totalScore >= 20000) rank = '⭐ MAESTRO';
+            else if (game.totalScore >= 15000) rank = '🥇 EXPERTO';
+            else if (game.totalScore >= 10000) rank = '🥈 AVANZADO';
+            else rank = '🥉 APRENDIZ';
+            
+            document.getElementById('app').innerHTML = `
+                <div class="container">
+                    <div class="intro">
+                        <h1>🏆 ¡JUEGO COMPLETADO!</h1>
+                        <div class="rank">${rank}</div>
+                        
+                        <div class="final-stats">
+                            <h2>📊 Estadísticas Finales</h2>
+                            <div class="final-stat-row">
+                                <span>Puntuación Total:</span>
+                                <span style="color: #ffd700; font-size: 1.5em;">${game.totalScore} pts</span>
+                            </div>
+                            <div class="final-stat-row">
+                                <span>Tiempo Total:</span>
+                                <span style="color: #00ff88;">${formatTime(totalTime)}</span>
+                            </div>
+                            <div class="final-stat-row">
+                                <span>Niveles Completados:</span>
+                                <span style="color: #00d4ff;">25/25</span>
+                            </div>
+                            <div class="final-stat-row">
+                                <span>Promedio por Nivel:</span>
+                                <span style="color: #ffa500;">${avgScore} pts</span>
+                            </div>
+                        </div>
+                        
+                        <p style="font-size: 1.5em; margin: 30px 0;">
+                            ¡Felicitaciones! Has dominado el arte de la programación lógica y los bucles.
+                        </p>
+                        
+                        <button class="btn-start" onclick="location.reload()">🔄 Jugar de Nuevo</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showIntro() {
+            document.getElementById('app').innerHTML = `
+                <div class="container">
+                    <div class="intro">
+                        <h1>🥷 DESAFÍO DE LÓGICA PRO</h1>
+                        <p style="font-size: 1.6em; color: #ffd700; margin: 20px 0;">25 NIVELES | SISTEMA DE PUNTOS | CRONÓMETRO</p>
+                        
+                        <ul>
+                            <li>🎯 <strong>25 niveles progresivos</strong> de dificultad creciente</li>
+                            <li>⚡ <strong>Sistema de puntos:</strong> Gana puntos por velocidad y eficiencia</li>
+                            <li>⏱️ <strong>Cronómetro global:</strong> Completa todos los niveles lo más rápido posible</li>
+                            <li>💎 <strong>Gemas obligatorias:</strong> Recoge todas para avanzar</li>
+                            <li>🌀 <strong>Obstáculos aleatorios:</strong> Cambian en cada intento</li>
+                            <li>🔒 <strong>Niveles 11-25:</strong> BUCLE OBLIGATORIO para completar</li>
+                            <li>📊 <strong>Estadísticas finales:</strong> Ranking según tu desempeño</li>
+                        </ul>
+                        
+                        <div style="background: rgba(255, 165, 0, 0.2); padding: 20px; border-radius: 10px; margin: 25px 0; border: 2px solid #ffa500;">
+                            <h3 style="color: #ffa500; margin-bottom: 10px;">⚡ Sistema de Energía:</h3>
+                            <p style="font-size: 1.1em;">• Comando simple (D) = 1 energía</p>
+                            <p style="font-size: 1.1em;">• Bucle X5{D,B} = 5 energía (¡NO 10!)</p>
+                            <p style="font-size: 1.1em; color: #ff5555; margin-top: 10px;">En niveles avanzados, SIN bucle es IMPOSIBLE ganar</p>
+                        </div>
+                        
+                        <p style="font-size: 1.2em;"><strong>Controles:</strong> D=Derecha | I=Izquierda | A=Arriba | B=Abajo</p>
+                        <p style="font-size: 1.2em;"><strong>Bucles:</strong> X5{D} = Repite 5 veces | X3{D,B} = Patrón 3 veces</p>
+                        
+                        <button class="btn-start" onclick="startGame()">🚀 COMENZAR DESAFÍO</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function startGame() {
+            game.currentLevel = 0;
+            game.totalScore = 0;
+            game.startTime = Date.now();
+            game.attempts = 0;
+            const level = levels[0];
+            generateRandomTraps(level);
+            game.pos = {...level.start};
+            game.gems = [];
+            game.energy = level.maxEnergy;
+            game.completed = false;
+            render();
+        }
+
+        showIntro();
+    </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"ad1db64a6be643a8ab293d3ca17b7c33","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
