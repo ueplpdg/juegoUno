@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🥷 Desafío de Lógica Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e1a;
+  --panel: #0f1829;
+  --panel2: #141f35;
+  --accent: #00d4ff;
+  --gold: #ffd700;
+  --green: #00e676;
+  --red: #ff4444;
+  --purple: #b84dff;
+  --orange: #ff9500;
+  --border: rgba(0,212,255,.18);
+  --cell: 48px;
+  --r: 14px;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body {
+  width:100vw; height:100vh; overflow:hidden;
+  background:var(--bg);
+  font-family:'Nunito', sans-serif;
+  color:#e8f4ff;
+  touch-action:manipulation;
+}
+
+/* ── TOP BAR ──────────────────────────────── */
+#topbar {
+  height:56px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 18px;
+  background:rgba(15,24,41,.97);
+  border-bottom:2px solid var(--border);
+  backdrop-filter:blur(12px);
+}
+.tb-title {
+  font-family:'Fredoka One',cursive;
+  font-size:1.5rem; color:var(--accent);
+  text-shadow:0 0 14px rgba(0,212,255,.6);
+  letter-spacing:1px;
+}
+.tb-stat { text-align:center; }
+.tb-label { font-size:.65rem; color:rgba(0,212,255,.6); text-transform:uppercase; letter-spacing:1px; }
+.tb-val {
+  font-family:'Fredoka One',cursive;
+  font-size:1.3rem; font-weight:900;
+  color:var(--gold); text-shadow:0 0 10px rgba(255,215,0,.5);
+}
+.tb-val.green { color:var(--green); text-shadow:0 0 10px rgba(0,230,118,.5); }
+
+/* ── MAIN LAYOUT ──────────────────────────── */
+#game-wrap {
+  display:flex;
+  width:100vw;
+  height:calc(100vh - 56px);
+  overflow:hidden;
+}
+
+/* ── LEFT — GRID PANEL ────────────────────── */
+#grid-panel {
+  flex:1.05; min-width:0;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:flex-start;
+  padding:10px 8px;
+  overflow:hidden;
+  border-right:2px solid var(--border);
+}
+.level-badge {
+  display:flex; align-items:center; gap:10px;
+  width:100%; margin-bottom:8px;
+}
+.level-name {
+  font-family:'Fredoka One',cursive;
+  font-size:1.1rem; color:var(--gold);
+  text-shadow:0 0 8px rgba(255,215,0,.4);
+  flex:1;
+}
+.energy-wrap { display:flex; align-items:center; gap:6px; }
+.energy-label { font-size:.7rem; color:var(--accent); white-space:nowrap; }
+.energy-bar-outer {
+  width:120px; height:18px;
+  background:rgba(0,0,0,.5); border-radius:9px;
+  overflow:hidden; border:1.5px solid var(--accent);
+}
+.energy-bar-inner {
+  height:100%;
+  background:linear-gradient(90deg,var(--green),var(--accent));
+  transition:width .3s;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.65rem; font-weight:800;
+}
+.objective-strip {
+  width:100%;
+  background:rgba(255,165,0,.12);
+  border-left:4px solid var(--orange);
+  border-radius:0 8px 8px 0;
+  padding:6px 12px; margin-bottom:8px;
+  font-size:.82rem; color:#ffd080;
+}
+.objective-strip strong { color:var(--orange); }
+
+/* Grid container with auto cell sizing */
+#grid-container {
+  flex:1; width:100%;
+  display:flex; align-items:center; justify-content:center;
+  overflow:hidden;
+}
+.game-grid {
+  display:grid; gap:2px;
+  background:#000; padding:4px;
+  border-radius:12px;
+  box-shadow:0 0 28px rgba(0,212,255,.3);
+}
+.cell {
+  display:flex; align-items:center; justify-content:center;
+  background:#1e3a12; border:1px solid #2a5018;
+  border-radius:3px; font-size:1.4em;
+  transition:all .15s;
+  position:relative; overflow:hidden;
+}
+.cell.goal {
+  background:radial-gradient(circle,#ff3333,#990000);
+  animation:goalPulse 1.5s infinite;
+}
+@keyframes goalPulse {
+  0%,100%{box-shadow:0 0 6px rgba(255,60,60,.5)}
+  50%{box-shadow:0 0 20px rgba(255,60,60,1)}
+}
+.cell.trap {
+  background:radial-gradient(circle,#220044,#000);
+  border:2px solid #8822cc;
+}
+.cell.trap::after {
+  content:'🌀'; font-size:.9em;
+  animation:spinTrap 2s linear infinite;
+}
+@keyframes spinTrap { to{transform:rotate(360deg)} }
+.cell.player { animation:playerGlow .8s infinite alternate; }
+@keyframes playerGlow {
+  from{transform:scale(1)}
+  to{transform:scale(1.12);filter:drop-shadow(0 0 6px #ffd700)}
+}
+.cell .gem { animation:gemFloat 2s ease-in-out infinite; filter:drop-shadow(0 0 6px #00d4ff); }
+@keyframes gemFloat {
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-3px)}
+}
+
+.hint-strip {
+  width:100%; margin-top:6px;
+  background:rgba(0,100,160,.18);
+  border-left:3px solid var(--accent);
+  border-radius:0 6px 6px 0;
+  padding:5px 10px; font-size:.76rem; color:#88ccff;
+}
+.loop-warning {
+  width:100%; margin-top:4px;
+  background:rgba(255,60,60,.15);
+  border:1.5px solid var(--red);
+  border-radius:8px; padding:5px 10px;
+  font-size:.75rem; color:#ff8888;
+  text-align:center; font-weight:700;
+  animation:warnBlink 2s infinite;
+}
+@keyframes warnBlink {
+  0%,100%{opacity:1} 50%{opacity:.65}
+}
+
+/* ── RIGHT — CONTROL PANEL ────────────────── */
+#ctrl-panel {
+  width:340px; flex-shrink:0;
+  display:flex; flex-direction:column;
+  padding:10px 10px 8px;
+  gap:7px; overflow:hidden;
+  background:var(--panel);
+}
+
+/* DIRECTION PAD */
+.dpad-section { display:flex; gap:10px; align-items:center; }
+.dpad {
+  display:grid;
+  grid-template-columns:repeat(3,60px);
+  grid-template-rows:repeat(2,60px);
+  gap:6px;
+}
+.dpad-btn {
+  width:60px; height:60px;
+  border-radius:12px;
+  border:2px solid rgba(0,212,255,.4);
+  background:linear-gradient(145deg,#1a3560,#0f2040);
+  color:white; font-size:1.4em;
+  cursor:pointer;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:1px; transition:all .12s;
+  box-shadow:0 4px 12px rgba(0,0,0,.4);
+  -webkit-user-select:none; user-select:none;
+}
+.dpad-btn:active { transform:scale(.91); background:linear-gradient(145deg,#2563eb,#1e40af); box-shadow:0 0 14px rgba(59,130,246,.6); }
+.dpad-btn .cmd-letter { font-family:'Fredoka One',cursive; font-size:.75rem; color:var(--accent); line-height:1; }
+.dpad-empty { width:60px; height:60px; }
+
+/* LOOP BUILDER */
+.loop-section {
+  background:rgba(184,77,255,.1);
+  border:1.5px solid rgba(184,77,255,.35);
+  border-radius:10px; padding:8px 10px;
+}
+.loop-sec-title {
+  font-family:'Fredoka One',cursive;
+  font-size:.85rem; color:var(--purple); margin-bottom:6px;
+  display:flex; align-items:center; gap:6px;
+}
+.loop-controls { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+.loop-count-btn {
+  width:38px; height:38px; border-radius:8px;
+  background:rgba(184,77,255,.18);
+  border:2px solid rgba(184,77,255,.35);
+  color:var(--purple); font-family:'Fredoka One',cursive; font-size:1rem;
+  cursor:pointer; transition:all .12s;
+  display:flex; align-items:center; justify-content:center;
+}
+.loop-count-btn.selected, .loop-count-btn:active {
+  background:var(--purple); color:white;
+  border-color:var(--purple);
+  box-shadow:0 0 10px rgba(184,77,255,.6);
+}
+.btn-close-loop {
+  padding:8px 14px; border-radius:8px;
+  background:linear-gradient(145deg,#ff9500,#e67e00);
+  border:none; color:white;
+  font-family:'Fredoka One',cursive; font-size:.85rem;
+  cursor:pointer; transition:all .12s;
+}
+.btn-close-loop:active { transform:scale(.93); }
+
+/* COMMAND SEQUENCE */
+.cmd-seq-wrap {
+  flex:1; min-height:0;
+  background:rgba(0,10,25,.6);
+  border:1.5px solid var(--border);
+  border-radius:10px; padding:6px 8px;
+  display:flex; flex-direction:column; gap:4px;
+  overflow:hidden;
+}
+.cmd-seq-title {
+  font-size:.7rem; color:var(--accent);
+  text-transform:uppercase; letter-spacing:1px;
+  display:flex; justify-content:space-between; align-items:center;
+  flex-shrink:0;
+}
+.cmd-seq-title button {
+  background:rgba(255,68,68,.2);
+  border:1px solid rgba(255,68,68,.4);
+  color:#ff8888; border-radius:6px;
+  padding:2px 8px; font-size:.7rem;
+  cursor:pointer; font-family:'Nunito',sans-serif;
+}
+.cmd-seq-title button:active { background:rgba(255,68,68,.5); }
+
+.cmd-blocks {
+  display:flex; flex-wrap:wrap; gap:4px; align-content:flex-start;
+  overflow-y:auto; flex:1;
+  padding:2px;
+}
+.cmd-block {
+  display:inline-flex; align-items:center; gap:3px;
+  padding:4px 8px; border-radius:7px;
+  font-weight:800; font-size:.8rem;
+  cursor:pointer; transition:all .15s;
+  border:2px solid transparent;
+  position:relative; flex-shrink:0;
+}
+.cmd-block:active { opacity:.7; transform:scale(.92); }
+.cmd-block.move-D { background:rgba(0,212,255,.18); border-color:rgba(0,212,255,.5); color:var(--accent); }
+.cmd-block.move-I { background:rgba(255,165,0,.18); border-color:rgba(255,165,0,.5); color:var(--orange); }
+.cmd-block.move-A { background:rgba(0,230,118,.18); border-color:rgba(0,230,118,.5); color:var(--green); }
+.cmd-block.move-B { background:rgba(255,100,100,.18); border-color:rgba(255,100,100,.5); color:#ff7070; }
+.cmd-block.loop-block {
+  background:rgba(184,77,255,.18); border-color:rgba(184,77,255,.5); color:var(--purple);
+  flex-direction:column; align-items:flex-start; gap:2px; padding:5px 8px;
+}
+.loop-block-inner { display:flex; gap:3px; flex-wrap:wrap; }
+.loop-block-inner .cmd-block { font-size:.7rem; padding:2px 5px; }
+.cmd-block .del-x {
+  font-size:.65rem; color:rgba(255,100,100,.7);
+  margin-left:3px; font-weight:900;
+}
+.cmd-empty-msg {
+  color:rgba(0,212,255,.3); font-size:.78rem;
+  padding:8px; text-align:center; width:100%;
+}
+
+/* LOOP MODE INDICATOR */
+.loop-mode-indicator {
+  background:rgba(184,77,255,.2);
+  border:2px solid var(--purple);
+  border-radius:8px; padding:5px 10px;
+  font-size:.8rem; color:var(--purple); font-weight:700;
+  text-align:center; animation:warnBlink 1s infinite;
+  display:none;
+}
+.loop-mode-indicator.visible { display:block; }
+
+/* ACTION BUTTONS */
+.action-row { display:flex; gap:8px; flex-shrink:0; }
+.btn-run {
+  flex:2; padding:14px; border:none; border-radius:12px;
+  background:linear-gradient(145deg,#10b981,#059669);
+  color:white; font-family:'Fredoka One',cursive; font-size:1.1rem;
+  cursor:pointer; box-shadow:0 4px 16px rgba(16,185,129,.4);
+  transition:all .15s;
+}
+.btn-run:active { transform:scale(.96); box-shadow:0 2px 8px rgba(16,185,129,.4); }
+.btn-undo {
+  flex:1; padding:14px; border:none; border-radius:12px;
+  background:linear-gradient(145deg,#d97706,#b45309);
+  color:white; font-family:'Fredoka One',cursive; font-size:1rem;
+  cursor:pointer; transition:all .15s;
+}
+.btn-undo:active { transform:scale(.96); }
+.btn-reset {
+  flex:1; padding:14px; border:none; border-radius:12px;
+  background:linear-gradient(145deg,#ef4444,#dc2626);
+  color:white; font-family:'Fredoka One',cursive; font-size:1rem;
+  cursor:pointer; transition:all .15s;
+}
+.btn-reset:active { transform:scale(.96); }
+
+/* FEEDBACK */
+#feedback {
+  flex-shrink:0;
+  padding:8px 12px; border-radius:10px;
+  text-align:center; font-weight:800; font-size:.9rem;
+  display:none;
+  animation:slideDown .25s ease;
+}
+@keyframes slideDown { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+#feedback.success { display:block; background:rgba(16,185,129,.2); border:2px solid #10b981; color:#10b981; }
+#feedback.error   { display:block; background:rgba(239,68,68,.2);  border:2px solid #ef4444; color:#ef4444; }
+
+.btn-next {
+  width:100%; padding:13px; border:none; border-radius:12px;
+  background:linear-gradient(145deg,#8b5cf6,#7c3aed);
+  color:white; font-family:'Fredoka One',cursive; font-size:1.1rem;
+  cursor:pointer; box-shadow:0 4px 16px rgba(139,92,246,.4);
+  transition:all .15s;
+}
+.btn-next:active { transform:scale(.96); }
+
+/* ── INTRO SCREEN ──────────────────────────── */
+#intro-screen {
+  position:fixed; inset:0; z-index:50;
+  background:var(--bg);
+  display:flex; align-items:center; justify-content:center;
+}
+.intro-card {
+  background:var(--panel2);
+  border:3px solid var(--accent);
+  border-radius:24px;
+  padding:32px 40px;
+  max-width:760px; width:90%;
+  text-align:center;
+  box-shadow:0 0 60px rgba(0,212,255,.25);
+}
+.intro-title {
+  font-family:'Fredoka One',cursive;
+  font-size:3rem; color:var(--accent);
+  text-shadow:0 0 30px rgba(0,212,255,.8);
+  margin-bottom:6px;
+}
+.intro-sub {
+  font-family:'Fredoka One',cursive;
+  font-size:1.2rem; color:var(--gold); margin-bottom:20px;
+}
+.intro-rules {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:12px; margin:18px 0; text-align:left;
+}
+.rule-card {
+  background:rgba(0,212,255,.07);
+  border:1.5px solid rgba(0,212,255,.2);
+  border-radius:12px; padding:12px 14px;
+  font-size:.9rem; line-height:1.5;
+}
+.rule-card strong { color:var(--accent); font-size:.95rem; display:block; margin-bottom:4px; }
+.cmd-ref {
+  display:flex; gap:10px; justify-content:center;
+  flex-wrap:wrap; margin:14px 0;
+}
+.cmd-pill {
+  background:rgba(0,212,255,.12);
+  border:2px solid rgba(0,212,255,.35);
+  border-radius:20px; padding:6px 16px;
+  font-family:'Fredoka One',cursive; font-size:1rem; color:var(--accent);
+}
+.loop-example {
+  background:rgba(184,77,255,.12);
+  border:2px solid rgba(184,77,255,.35);
+  border-radius:12px; padding:12px 18px; margin:12px 0;
+  font-family:'Fredoka One',cursive; font-size:1rem; color:var(--purple);
+}
+.btn-start {
+  background:linear-gradient(145deg,#10b981,#059669);
+  color:white; border:none;
+  padding:18px 60px;
+  font-family:'Fredoka One',cursive; font-size:1.5rem;
+  border-radius:16px; cursor:pointer;
+  box-shadow:0 6px 24px rgba(16,185,129,.5);
+  transition:all .15s; margin-top:8px;
+}
+.btn-start:active { transform:scale(.97); }
+
+/* ── WIN OVERLAY ──────────────────────────── */
+#win-screen {
+  position:fixed; inset:0; z-index:60;
+  background:rgba(5,10,20,.96);
+  display:none; align-items:center; justify-content:center;
+  flex-direction:column; gap:16px; text-align:center;
+}
+#win-screen.show { display:flex; }
+.win-title {
+  font-family:'Fredoka One',cursive;
+  font-size:3.5rem; color:var(--gold);
+  text-shadow:0 0 40px rgba(255,215,0,.8);
+  animation:winPop .5s ease;
+}
+@keyframes winPop { from{transform:scale(.5);opacity:0} to{transform:scale(1);opacity:1} }
+.win-rank { font-size:2.5rem; margin:8px 0; }
+.win-stats {
+  background:rgba(0,50,100,.4);
+  border:2px solid var(--gold);
+  border-radius:16px; padding:24px 40px;
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:16px; min-width:400px;
+}
+.win-stat { text-align:center; }
+.win-stat .n { font-family:'Fredoka One',cursive; font-size:2rem; color:var(--gold); }
+.win-stat .l { font-size:.8rem; color:rgba(0,212,255,.7); text-transform:uppercase; letter-spacing:1px; }
+.btn-restart {
+  background:linear-gradient(145deg,#10b981,#059669);
+  color:white; border:none;
+  padding:16px 50px;
+  font-family:'Fredoka One',cursive; font-size:1.3rem;
+  border-radius:14px; cursor:pointer; margin-top:8px;
+}
+
+/* ── SCROLLBARS ──────────────────────────── */
+.cmd-blocks::-webkit-scrollbar { width:4px; }
+.cmd-blocks::-webkit-scrollbar-track { background:transparent; }
+.cmd-blocks::-webkit-scrollbar-thumb { background:rgba(0,212,255,.3); border-radius:2px; }
+</style>
+</head>
+<body>
+
+<!-- ── INTRO ───────────────────────────────── -->
+<div id="intro-screen">
+  <div class="intro-card">
+    <div class="intro-title">🥷 Desafío de Lógica Pro</div>
+    <div class="intro-sub">25 Niveles · Sistema de Puntos · Cronómetro</div>
+
+    <div class="intro-rules">
+      <div class="rule-card">
+        <strong>🎯 Objetivo</strong>
+        Lleva al ninja 🥷 a la meta 🎯 recogiendo todas las gemas 💎 sin caer en los portales 🌀
+      </div>
+      <div class="rule-card">
+        <strong>⚡ Energía</strong>
+        Cada comando usa 1 energía. Un <em>bucle</em> X5{...} usa solo 1 energía por repetición — mucho más eficiente.
+      </div>
+      <div class="rule-card">
+        <strong>🌀 Obstáculos</strong>
+        Los portales aparecen aleatoriamente. Si tocas uno ¡pierdes! Planifica bien tu ruta.
+      </div>
+      <div class="rule-card">
+        <strong>🏆 Puntos</strong>
+        Ganas puntos por completar niveles, por energía sobrante y por pocos intentos. ¡Sé eficiente!
+      </div>
+    </div>
+
+    <div class="cmd-ref">
+      <div class="cmd-pill">→ D = Derecha</div>
+      <div class="cmd-pill">← I = Izquierda</div>
+      <div class="cmd-pill">↑ A = Arriba</div>
+      <div class="cmd-pill">↓ B = Abajo</div>
+    </div>
+
+    <div class="loop-example">
+      🔁 Bucle: elige número → toca flechas → cierra<br>
+      Ejemplo: X5{D,B} = repite "derecha, abajo" 5 veces
+    </div>
+
+    <button class="btn-start" onclick="startGame()">🚀 ¡Comenzar!</button>
+  </div>
+</div>
+
+<!-- ── WIN SCREEN ──────────────────────────── -->
+<div id="win-screen">
+  <div class="win-title">🏆 ¡Juego Completado!</div>
+  <div class="win-rank" id="win-rank"></div>
+  <div class="win-stats">
+    <div class="win-stat"><div class="n" id="ws-score">0</div><div class="l">Puntos totales</div></div>
+    <div class="win-stat"><div class="n" id="ws-time">0:00</div><div class="l">Tiempo total</div></div>
+    <div class="win-stat"><div class="n" id="ws-lvl">25/25</div><div class="l">Niveles</div></div>
+    <div class="win-stat"><div class="n" id="ws-avg">0</div><div class="l">Promedio / nivel</div></div>
+  </div>
+  <div style="font-size:1.1rem;color:#88aacc">¡Felicitaciones! Eres un maestro de la programación.</div>
+  <button class="btn-restart" onclick="location.reload()">🔄 Jugar de Nuevo</button>
+</div>
+
+<!-- ── GAME ─────────────────────────────────── -->
+<div id="topbar" style="display:none">
+  <div class="tb-title">🥷 Lógica Pro</div>
+  <div class="tb-stat"><div class="tb-label">Puntos</div><div class="tb-val" id="tb-score">0</div></div>
+  <div class="tb-stat"><div class="tb-label">Tiempo</div><div class="tb-val green" id="tb-timer">0:00</div></div>
+  <div class="tb-stat"><div class="tb-label">Nivel</div><div class="tb-val" id="tb-level">1/25</div></div>
+</div>
+
+<div id="game-wrap" style="display:none">
+
+  <!-- LEFT: Grid -->
+  <div id="grid-panel">
+    <div class="level-badge">
+      <div class="level-name" id="level-name">Nivel 1: Primer Paso</div>
+      <div class="energy-wrap">
+        <div class="energy-label">⚡</div>
+        <div class="energy-bar-outer">
+          <div class="energy-bar-inner" id="energy-bar" style="width:100%">10/10</div>
+        </div>
+      </div>
+    </div>
+    <div class="objective-strip" id="obj-strip">
+      <strong>Objetivo:</strong> <span id="obj-text"></span>
+    </div>
+    <div class="loop-warning" id="loop-warning" style="display:none">
+      🔒 BUCLE OBLIGATORIO — Sin bucle es imposible terminar este nivel
+    </div>
+    <div id="grid-container">
+      <div class="game-grid" id="the-grid"></div>
+    </div>
+    <div class="hint-strip" id="hint-strip">💡 </div>
+  </div>
+
+  <!-- RIGHT: Controls -->
+  <div id="ctrl-panel">
+
+    <!-- Direction pad + side info -->
+    <div class="dpad-section">
+      <div class="dpad">
+        <div class="dpad-empty"></div>
+        <button class="dpad-btn" onclick="addMove('A')">↑<br><span class="cmd-letter">A</span></button>
+        <div class="dpad-empty"></div>
+        <button class="dpad-btn" onclick="addMove('I')">←<br><span class="cmd-letter">I</span></button>
+        <button class="dpad-btn" onclick="addMove('B')">↓<br><span class="cmd-letter">B</span></button>
+        <button class="dpad-btn" onclick="addMove('D')">→<br><span class="cmd-letter">D</span></button>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:.72rem;color:var(--accent);text-transform:uppercase;letter-spacing:1px;font-weight:700">Gemas</div>
+        <div style="font-family:'Fredoka One',cursive;font-size:1.5rem;color:var(--gold)" id="gems-count">0/0</div>
+        <div style="font-size:.72rem;color:var(--accent);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-top:6px">Intentos</div>
+        <div style="font-family:'Fredoka One',cursive;font-size:1.5rem;color:#ff8888" id="attempts-count">0</div>
+      </div>
+    </div>
+
+    <!-- Loop builder -->
+    <div class="loop-section">
+      <div class="loop-sec-title">🔁 Constructor de Bucle</div>
+      <div class="loop-controls">
+        <div style="font-size:.75rem;color:var(--purple);margin-right:2px">Repetir:</div>
+        <button class="loop-count-btn" id="lc3" onclick="selectLoopCount(3)">3</button>
+        <button class="loop-count-btn" id="lc4" onclick="selectLoopCount(4)">4</button>
+        <button class="loop-count-btn" id="lc5" onclick="selectLoopCount(5)">5</button>
+        <button class="loop-count-btn" id="lc6" onclick="selectLoopCount(6)">6</button>
+        <button class="loop-count-btn" id="lc8" onclick="selectLoopCount(8)">8</button>
+        <button class="loop-count-btn" id="lc10" onclick="selectLoopCount(10)">10</button>
+        <button class="btn-close-loop" onclick="closeLoop()" id="btn-close-loop" style="display:none">✓ Cerrar</button>
+      </div>
+    </div>
+
+    <!-- Loop mode indicator -->
+    <div class="loop-mode-indicator" id="loop-indicator">
+      🔁 Modo bucle activo — Toca flechas para agregar al bucle
+    </div>
+
+    <!-- Command sequence -->
+    <div class="cmd-seq-wrap">
+      <div class="cmd-seq-title">
+        <span>📋 Secuencia de comandos</span>
+        <button onclick="clearAll()">🗑 Borrar todo</button>
+      </div>
+      <div class="cmd-blocks" id="cmd-blocks">
+        <div class="cmd-empty-msg">Toca las flechas para agregar comandos ↑</div>
+      </div>
+    </div>
+
+    <!-- Feedback -->
+    <div id="feedback"></div>
+
+    <!-- Actions -->
+    <div class="action-row">
+      <button class="btn-undo" onclick="undoLast()">↩ Deshacer</button>
+      <button class="btn-run" onclick="runCommands()">▶ Ejecutar</button>
+      <button class="btn-reset" onclick="resetLevel()">↺ Reiniciar</button>
+    </div>
+
+    <!-- Next level (shown after win) -->
+    <button class="btn-next" id="btn-next" style="display:none" onclick="nextLevel()">➡ Siguiente Nivel</button>
+
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════
+   GAME DATA
+══════════════════════════════════════════════ */
+const game = {
+  currentLevel:0, pos:{x:0,y:0}, gems:[], energy:0,
+  completed:false, executing:false, totalScore:0,
+  startTime:null, attempts:0
+};
+
+const levels = [
+  {id:1,name:"Primer Paso",grid:5,start:{x:0,y:0},goal:{x:4,y:0},gems:[],traps:[],maxEnergy:5,objective:"Mueve 4 pasos a la derecha",hint:"Presiona → cuatro veces",points:100,loopRequired:false},
+  {id:2,name:"Primera Gema",grid:5,start:{x:0,y:0},goal:{x:2,y:2},gems:[{x:2,y:0}],traps:[],maxEnergy:6,objective:"Recoge la gema y llega a la meta",hint:"Primero ve a la derecha, luego baja",points:150,loopRequired:false},
+  {id:3,name:"Diagonal",grid:5,start:{x:0,y:0},goal:{x:3,y:3},gems:[{x:1,y:1},{x:2,y:2}],traps:[],maxEnergy:8,objective:"Sigue la diagonal recogiendo gemas",hint:"Alterna derecha y abajo",points:200,loopRequired:false},
+  {id:4,name:"Bucle Intro",grid:6,start:{x:0,y:0},goal:{x:5,y:0},gems:[{x:1,y:0},{x:2,y:0},{x:3,y:0},{x:4,y:0}],traps:[],maxEnergy:6,objective:"Usa un bucle: repite derecha 5 veces",hint:"Intenta X5{D} — ¡mucho más fácil!",points:250,loopRequired:false},
+  {id:5,name:"Escalera",grid:6,start:{x:0,y:0},goal:{x:4,y:4},gems:[{x:1,y:1},{x:2,y:2},{x:3,y:3}],traps:[],maxEnergy:10,objective:"Diagonal con bucle",hint:"Repite D,B cuatro veces con X4{D,B}",points:300,loopRequired:false},
+  {id:6,name:"Trampa",grid:6,start:{x:0,y:0},goal:{x:4,y:2},gems:[{x:2,y:1}],traps:[],maxEnergy:8,objective:"Evita los portales 🌀",hint:"Los portales son aleatorios — planifica bien",points:350,loopRequired:false,randomTraps:2},
+  {id:7,name:"Zigzag",grid:7,start:{x:0,y:0},goal:{x:6,y:2},gems:[{x:2,y:0},{x:4,y:1},{x:6,y:2}],traps:[],maxEnergy:10,objective:"Patrón zigzag",hint:"Avanza 2, baja 1 — repite con X3{D,D,B}",points:400,loopRequired:false,randomTraps:2},
+  {id:8,name:"Laberinto",grid:7,start:{x:0,y:0},goal:{x:6,y:6},gems:[{x:3,y:3},{x:5,y:5}],traps:[],maxEnergy:16,objective:"Navega el laberinto",hint:"Planifica la ruta completa antes",points:450,loopRequired:false,randomTraps:3},
+  {id:9,name:"Anidados",grid:8,start:{x:0,y:0},goal:{x:6,y:6},gems:[{x:2,y:2},{x:4,y:4},{x:6,y:6}],traps:[],maxEnergy:14,objective:"Practica bucles de 4 pasos",hint:"X3{D,D,B,B} te lleva en diagonal",points:500,loopRequired:false,randomTraps:3},
+  {id:10,name:"Final Básico",grid:9,start:{x:0,y:0},goal:{x:8,y:8},gems:[{x:1,y:1},{x:2,y:2},{x:3,y:3},{x:4,y:4},{x:5,y:5},{x:6,y:6},{x:7,y:7}],traps:[],maxEnergy:18,objective:"Diagonal completa",hint:"X8{D,B} — ¡usa el bucle!",points:600,loopRequired:false,randomTraps:4},
+  {id:11,name:"🔒 Código I",grid:6,start:{x:0,y:0},goal:{x:5,y:5},gems:[{x:1,y:1},{x:2,y:2},{x:3,y:3},{x:4,y:4}],traps:[],maxEnergy:6,objective:"10 movimientos / 6 energía — BUCLE",hint:"X5{D,B} es la clave",points:800,loopRequired:true,randomTraps:2},
+  {id:12,name:"🔒 Código II",grid:9,start:{x:0,y:0},goal:{x:8,y:4},gems:[{x:2,y:1},{x:4,y:2},{x:6,y:3}],traps:[],maxEnergy:5,objective:"12 movimientos / 5 energía — BUCLE",hint:"X4{D,D,B} — avanza 2, baja 1",points:900,loopRequired:true,randomTraps:2},
+  {id:13,name:"🔒 Código III",grid:13,start:{x:0,y:0},goal:{x:6,y:12},gems:[{x:1,y:2},{x:2,y:4},{x:3,y:6},{x:4,y:8},{x:5,y:10}],traps:[],maxEnergy:7,objective:"18 movimientos / 7 energía — BUCLE",hint:"X6{D,B,B} — 1 derecha, 2 abajo",points:1000,loopRequired:true,randomTraps:3},
+  {id:14,name:"🔒 Código IV",grid:11,start:{x:0,y:0},goal:{x:10,y:5},gems:[{x:2,y:1},{x:4,y:2},{x:6,y:3},{x:8,y:4}],traps:[],maxEnergy:6,objective:"15 movimientos / 6 energía — BUCLE",hint:"X5{D,D,B} — 2 derechas, 1 abajo",points:1100,loopRequired:true,randomTraps:3},
+  {id:15,name:"🔒 Código V",grid:13,start:{x:0,y:0},goal:{x:12,y:4},gems:[{x:3,y:1},{x:6,y:2},{x:9,y:3}],traps:[],maxEnergy:5,objective:"16 movimientos / 5 energía — BUCLE",hint:"X4{D,D,D,B} — 3 derechas, 1 abajo",points:1200,loopRequired:true,randomTraps:4},
+  {id:16,name:"🔒 Diagonal Maestra",grid:13,start:{x:0,y:0},goal:{x:12,y:12},gems:[{x:2,y:2},{x:4,y:4},{x:6,y:6},{x:8,y:8},{x:10,y:10}],traps:[],maxEnergy:7,objective:"24 movimientos / 7 energía — BUCLE",hint:"X6{D,D,B,B} — patrón de 4",points:1300,loopRequired:true,randomTraps:5},
+  {id:17,name:"🔒 Serpiente",grid:15,start:{x:0,y:0},goal:{x:14,y:7},gems:[{x:2,y:1},{x:4,y:2},{x:6,y:3},{x:8,y:4},{x:10,y:5},{x:12,y:6}],traps:[],maxEnergy:8,objective:"21 movimientos / 8 energía — BUCLE",hint:"X7{D,D,B} — serpiente ascendente",points:1400,loopRequired:true,randomTraps:4},
+  {id:18,name:"🔒 Cascada",grid:17,start:{x:0,y:0},goal:{x:8,y:16},gems:[{x:1,y:2},{x:2,y:4},{x:3,y:6},{x:4,y:8},{x:5,y:10},{x:6,y:12},{x:7,y:14}],traps:[],maxEnergy:9,objective:"24 movimientos / 9 energía — BUCLE",hint:"X8{D,B,B} — cascada lateral",points:1500,loopRequired:true,randomTraps:4},
+  {id:19,name:"🔒 Escalera Grande",grid:19,start:{x:0,y:0},goal:{x:18,y:18},gems:[{x:3,y:3},{x:6,y:6},{x:9,y:9},{x:12,y:12},{x:15,y:15}],traps:[],maxEnergy:7,objective:"36 movimientos / 7 energía — BUCLE",hint:"X6{D,D,D,B,B,B} — patrón de 6",points:1600,loopRequired:true,randomTraps:6},
+  {id:20,name:"🔒 Épico",grid:21,start:{x:0,y:0},goal:{x:20,y:20},gems:[{x:4,y:4},{x:8,y:8},{x:12,y:12},{x:16,y:16}],traps:[],maxEnergy:11,objective:"40 movimientos / 11 energía — BUCLE",hint:"X10{D,D,B,B} — diagonal perfecta",points:1800,loopRequired:true,randomTraps:5},
+  {id:21,name:"🏆 Maestro I",grid:15,start:{x:0,y:0},goal:{x:12,y:9},gems:[{x:3,y:2},{x:6,y:4},{x:9,y:6},{x:12,y:8}],traps:[],maxEnergy:6,objective:"MAESTRO: 20 movimientos / 6 energía",hint:"¿Cuántas veces se repite el patrón?",points:2000,loopRequired:true,randomTraps:5},
+  {id:22,name:"🏆 Maestro II",grid:17,start:{x:0,y:0},goal:{x:15,y:12},gems:[{x:3,y:2},{x:6,y:4},{x:9,y:6},{x:12,y:8},{x:15,y:10}],traps:[],maxEnergy:7,objective:"MAESTRO: 25 movimientos / 7 energía",hint:"X5{D,D,D,B,B} — analiza las gemas",points:2200,loopRequired:true,randomTraps:6},
+  {id:23,name:"🏆 Leyenda I",grid:20,start:{x:0,y:0},goal:{x:18,y:15},gems:[{x:3,y:2},{x:6,y:4},{x:9,y:7},{x:12,y:9},{x:15,y:12}],traps:[],maxEnergy:8,objective:"LEYENDA: 30 movimientos / 8 energía",hint:"Patrón de 5 movimientos — ¿cuáles?",points:2500,loopRequired:true,randomTraps:7},
+  {id:24,name:"🏆 Leyenda II",grid:22,start:{x:0,y:0},goal:{x:20,y:16},gems:[{x:4,y:3},{x:8,y:6},{x:12,y:9},{x:16,y:12},{x:20,y:15}],traps:[],maxEnergy:9,objective:"LEYENDA: 35 movimientos / 9 energía",hint:"Combina dos patrones distintos",points:2800,loopRequired:true,randomTraps:8},
+  {id:25,name:"🏆 DIOS DE LA LÓGICA",grid:25,start:{x:0,y:0},goal:{x:24,y:24},gems:[{x:4,y:4},{x:8,y:8},{x:12,y:12},{x:16,y:16},{x:20,y:20},{x:24,y:24}],traps:[],maxEnergy:13,objective:"SUPREMO: 48 movimientos / 13 energía",hint:"El patrón perfecto está en las gemas",points:3500,loopRequired:true,randomTraps:10}
+];
+
+/* ══════════════════════════════════════════════
+   COMMAND BUILDER (Touch-based)
+══════════════════════════════════════════════ */
+let cmdBlocks = []; // [{type:'move',cmd:'D'} | {type:'loop',reps:5,cmds:['D','B']}]
+let loopMode = false;
+let loopCount = 5;
+let currentLoopCmds = [];
+
+function selectLoopCount(n) {
+  loopCount = n;
+  document.querySelectorAll('.loop-count-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('lc'+n)?.classList.add('selected');
+  // Start loop mode
+  loopMode = true;
+  currentLoopCmds = [];
+  document.getElementById('loop-indicator').classList.add('visible');
+  document.getElementById('btn-close-loop').style.display = 'flex';
+  renderCmdBlocks();
+}
+
+function closeLoop() {
+  if (currentLoopCmds.length === 0) {
+    showFeedback('error','⚠️ Agrega al menos un comando al bucle');
+    return;
+  }
+  cmdBlocks.push({type:'loop', reps:loopCount, cmds:[...currentLoopCmds]});
+  loopMode = false;
+  currentLoopCmds = [];
+  document.getElementById('loop-indicator').classList.remove('visible');
+  document.getElementById('btn-close-loop').style.display = 'none';
+  document.querySelectorAll('.loop-count-btn').forEach(b => b.classList.remove('selected'));
+  renderCmdBlocks();
+}
+
+function addMove(cmd) {
+  if (loopMode) {
+    currentLoopCmds.push(cmd);
+  } else {
+    cmdBlocks.push({type:'move', cmd});
+  }
+  renderCmdBlocks();
+}
+
+function undoLast() {
+  if (loopMode && currentLoopCmds.length > 0) {
+    currentLoopCmds.pop();
+  } else if (loopMode) {
+    // Cancel loop mode
+    loopMode = false;
+    currentLoopCmds = [];
+    document.getElementById('loop-indicator').classList.remove('visible');
+    document.getElementById('btn-close-loop').style.display = 'none';
+    document.querySelectorAll('.loop-count-btn').forEach(b => b.classList.remove('selected'));
+  } else {
+    cmdBlocks.pop();
+  }
+  renderCmdBlocks();
+}
+
+function clearAll() {
+  cmdBlocks = [];
+  loopMode = false;
+  currentLoopCmds = [];
+  document.getElementById('loop-indicator').classList.remove('visible');
+  document.getElementById('btn-close-loop').style.display = 'none';
+  document.querySelectorAll('.loop-count-btn').forEach(b => b.classList.remove('selected'));
+  renderCmdBlocks();
+}
+
+const CMD_LABELS = {D:'→ D', I:'← I', A:'↑ A', B:'↓ B'};
+const CMD_COLORS = {D:'move-D', I:'move-I', A:'move-A', B:'move-B'};
+
+function renderCmdBlocks() {
+  const cont = document.getElementById('cmd-blocks');
+  if (!cont) return;
+
+  const allBlocks = [...cmdBlocks];
+  // Add pending loop as preview
+  let html = '';
+
+  if (allBlocks.length === 0 && !loopMode) {
+    html = '<div class="cmd-empty-msg">Toca las flechas para agregar comandos ↑</div>';
+  } else {
+    allBlocks.forEach((b, i) => {
+      if (b.type === 'move') {
+        html += `<div class="cmd-block ${CMD_COLORS[b.cmd]}" onclick="removeBlock(${i})">${CMD_LABELS[b.cmd]}<span class="del-x">✕</span></div>`;
+      } else {
+        let inner = b.cmds.map(c => `<div class="cmd-block ${CMD_COLORS[c]}">${CMD_LABELS[c]}</div>`).join('');
+        html += `<div class="cmd-block loop-block" onclick="removeBlock(${i})"><span>🔁 ×${b.reps} <span class="del-x">✕</span></span><div class="loop-block-inner">${inner}</div></div>`;
+      }
+    });
+  }
+
+  if (loopMode) {
+    let pendingInner = currentLoopCmds.map(c => `<div class="cmd-block ${CMD_COLORS[c]}">${CMD_LABELS[c]}</div>`).join('') || '<span style="color:rgba(184,77,255,.4);font-size:.75rem">toca flechas...</span>';
+    html += `<div class="cmd-block loop-block" style="opacity:.7;border-style:dashed"><span>🔁 ×${loopCount} (abierto)</span><div class="loop-block-inner">${pendingInner}</div></div>`;
+  }
+
+  cont.innerHTML = html;
+}
+
+function removeBlock(i) {
+  cmdBlocks.splice(i, 1);
+  renderCmdBlocks();
+}
+
+function blocksToString() {
+  return cmdBlocks.map(b => {
+    if (b.type === 'move') return b.cmd;
+    return `X${b.reps}{${b.cmds.join(',')}}`;
+  }).join(' ');
+}
+
+/* ══════════════════════════════════════════════
+   GAME LOGIC (preserved from original)
+══════════════════════════════════════════════ */
+function generateRandomTraps(level) {
+  if (!level.randomTraps) return;
+  level.traps = [];
+  const used = new Set();
+  used.add(`${level.start.x},${level.start.y}`);
+  used.add(`${level.goal.x},${level.goal.y}`);
+  level.gems.forEach(g => used.add(`${g.x},${g.y}`));
+  let attempts = 0;
+  while (level.traps.length < level.randomTraps && attempts < 100) {
+    const x = Math.floor(Math.random()*level.grid);
+    const y = Math.floor(Math.random()*level.grid);
+    const key = `${x},${y}`;
+    if (!used.has(key)) { level.traps.push({x,y}); used.add(key); }
+    attempts++;
+  }
+}
+
+function parseCommands(input) {
+  const result = [];
+  const str = input.toUpperCase().replace(/[\s,]/g,'');
+  let i = 0;
+  while (i < str.length) {
+    if (str[i] === 'X') {
+      let numStr = ''; i++;
+      while (i < str.length && str[i] >= '0' && str[i] <= '9') { numStr += str[i]; i++; }
+      const reps = parseInt(numStr);
+      if (i < str.length && str[i] === '{') {
+        i++; let content = ''; let braces = 1;
+        while (i < str.length && braces > 0) {
+          if (str[i] === '{') braces++;
+          else if (str[i] === '}') braces--;
+          if (braces > 0) content += str[i];
+          i++;
+        }
+        result.push({type:'loop', reps, cmds:parseSimple(content)});
+      }
+    } else if (['D','I','A','B'].includes(str[i])) {
+      result.push({type:'cmd', cmd:str[i]}); i++;
+    } else { i++; }
+  }
+  return result;
+}
+
+function parseSimple(str) {
+  const cmds = [];
+  for (let i = 0; i < str.length; i++) {
+    if (['D','I','A','B'].includes(str[i])) cmds.push(str[i]);
+  }
+  return cmds;
+}
+
+async function executeCommands(parsed) {
+  if (game.executing) return;
+  game.executing = true;
+  const level = levels[game.currentLevel];
+  game.pos = {...level.start};
+  game.gems = [];
+  game.energy = level.maxEnergy;
+  renderGrid();
+  updateUI();
+
+  for (let i = 0; i < parsed.length; i++) {
+    const item = parsed[i];
+    if (item.type === 'loop') {
+      for (let r = 0; r < item.reps; r++) {
+        if (game.energy <= 0) {
+          showFeedback('error','⚡ Sin energía — necesitas un bucle más eficiente');
+          game.executing = false; game.attempts++; updateUI(); return;
+        }
+        game.energy--;
+        for (let c = 0; c < item.cmds.length; c++) {
+          const ok = await executeMove(item.cmds[c]);
+          if (!ok) { game.executing = false; game.attempts++; updateUI(); return; }
+        }
+      }
+    } else {
+      if (game.energy <= 0) {
+        showFeedback('error','⚡ Sin energía — usa un bucle para ahorrar');
+        game.executing = false; game.attempts++; updateUI(); return;
+      }
+      game.energy--;
+      const ok = await executeMove(item.cmd);
+      if (!ok) { game.executing = false; game.attempts++; updateUI(); return; }
+    }
+  }
+  checkWin();
+  game.executing = false;
+}
+
+async function executeMove(cmd) {
+  const level = levels[game.currentLevel];
+  const np = {...game.pos};
+  if (cmd==='D') np.x++;
+  else if (cmd==='I') np.x--;
+  else if (cmd==='A') np.y--;
+  else if (cmd==='B') np.y++;
+
+  if (np.x<0||np.x>=level.grid||np.y<0||np.y>=level.grid) {
+    showFeedback('error','🚫 Fuera del tablero');
+    return false;
+  }
+  if (level.traps.some(t=>t.x===np.x&&t.y===np.y)) {
+    game.pos = np; renderGrid(); updateUI();
+    await sleep(200);
+    showFeedback('error','💀 ¡Caíste en un portal!');
+    return false;
+  }
+  game.pos = np;
+  for (let g=0;g<level.gems.length;g++) {
+    if (level.gems[g].x===np.x&&level.gems[g].y===np.y&&!game.gems.includes(g)) {
+      game.gems.push(g); break;
+    }
+  }
+  renderGrid(); updateUI();
+  await sleep(180);
+  return true;
+}
+
+function checkWin() {
+  const level = levels[game.currentLevel];
+  if (game.pos.x===level.goal.x&&game.pos.y===level.goal.y&&game.gems.length===level.gems.length) {
+    const bonus = Math.max(0,500-game.attempts*50);
+    const eBonus = game.energy*20;
+    const score = level.points + bonus + eBonus;
+    game.totalScore += score;
+    game.completed = true;
+    game.attempts = 0;
+    showFeedback('success',`🎉 +${score} pts — Nivel ${level.id} completado!`);
+    document.getElementById('btn-next').style.display = game.currentLevel < levels.length-1 ? 'block' : 'none';
+    updateTopbar();
+  } else {
+    let msg = game.pos.x!==level.goal.x||game.pos.y!==level.goal.y
+      ? '❌ No llegaste a la meta'
+      : `❌ Faltan ${level.gems.length-game.gems.length} gemas`;
+    showFeedback('error', msg);
+    game.attempts++;
+    updateUI();
+  }
+}
+
+/* ══════════════════════════════════════════════
+   UI HELPERS
+══════════════════════════════════════════════ */
+function runCommands() {
+  if (game.executing) return;
+  const str = blocksToString();
+  if (!str.trim()) { showFeedback('error','⚠️ Agrega comandos primero'); return; }
+  const parsed = parseCommands(str);
+  if (parsed.length === 0) { showFeedback('error','⚠️ Comandos inválidos'); return; }
+  document.getElementById('feedback').className='feedback';
+  document.getElementById('feedback').style.display='none';
+  document.getElementById('btn-next').style.display='none';
+  executeCommands(parsed);
+}
+
+function resetLevel() {
+  const level = levels[game.currentLevel];
+  generateRandomTraps(level);
+  game.pos = {...level.start};
+  game.gems = [];
+  game.energy = level.maxEnergy;
+  game.completed = false;
+  clearAll();
+  document.getElementById('feedback').className='feedback';
+  document.getElementById('feedback').style.display='none';
+  document.getElementById('btn-next').style.display='none';
+  renderGrid();
+  updateUI();
+}
+
+function nextLevel() {
+  if (game.currentLevel < levels.length-1) {
+    game.currentLevel++;
+    resetLevel();
+  } else {
+    showWin();
+  }
+}
+
+function showFeedback(type, msg) {
+  const fb = document.getElementById('feedback');
+  if (!fb) return;
+  fb.className = `feedback ${type}`;
+  fb.textContent = msg;
+  fb.style.display='block';
+}
+
+function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
+
+function formatTime(ms) {
+  const s = Math.floor(ms/1000);
+  return `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
+}
+
+/* ══════════════════════════════════════════════
+   GRID RENDERING — Auto cell size
+══════════════════════════════════════════════ */
+function getOptimalCellSize(gridCols) {
+  const gp = document.getElementById('grid-panel');
+  if (!gp) return 44;
+  const pw = gp.clientWidth - 20;
+  const ph = gp.clientHeight - 150; // subtract header/footer elements
+  const byW = Math.floor((pw - 8 - (gridCols-1)*2) / gridCols);
+  const byH = Math.floor((ph - 8 - (gridCols-1)*2) / gridCols);
+  return Math.max(16, Math.min(byW, byH, 56));
+}
+
+function renderGrid() {
+  const level = levels[game.currentLevel];
+  const grid = document.getElementById('the-grid');
+  if (!grid) return;
+  const cs = getOptimalCellSize(level.grid);
+  grid.style.gridTemplateColumns = `repeat(${level.grid}, ${cs}px)`;
+
+  let html = '';
+  for (let y=0;y<level.grid;y++) {
+    for (let x=0;x<level.grid;x++) {
+      let cls = 'cell', content = '';
+      grid.style.setProperty('--cell', cs+'px');
+
+      if (level.traps.some(t=>t.x===x&&t.y===y)) cls += ' trap';
+      else if (level.goal.x===x&&level.goal.y===y) { cls+=' goal'; content='🎯'; }
+
+      let hasGem = false;
+      for (let g=0;g<level.gems.length;g++) {
+        if (level.gems[g].x===x&&level.gems[g].y===y&&!game.gems.includes(g)) { hasGem=true; break; }
+      }
+      if (hasGem) content = `<span class="gem">💎</span>`;
+      if (game.pos.x===x&&game.pos.y===y) { cls+=' player'; content='🥷'; }
+
+      html += `<div class="${cls}" style="width:${cs}px;height:${cs}px;font-size:${Math.max(12,cs*.55)}px">${content}</div>`;
+    }
+  }
+  grid.innerHTML = html;
+}
+
+function updateUI() {
+  const level = levels[game.currentLevel];
+  const ep = (game.energy/level.maxEnergy)*100;
+  const eb = document.getElementById('energy-bar');
+  if (eb) { eb.style.width = ep+'%'; eb.textContent = `⚡ ${game.energy}/${level.maxEnergy}`; }
+  const gc = document.getElementById('gems-count');
+  if (gc) gc.textContent = `${game.gems.length}/${level.gems.length}`;
+  const ac = document.getElementById('attempts-count');
+  if (ac) ac.textContent = game.attempts;
+}
+
+function updateTopbar() {
+  document.getElementById('tb-score').textContent = game.totalScore;
+  document.getElementById('tb-level').textContent = `${game.currentLevel+1}/25`;
+}
+
+function updateTimer() {
+  if (game.startTime) {
+    document.getElementById('tb-timer').textContent = formatTime(Date.now()-game.startTime);
+  }
+}
+
+/* ══════════════════════════════════════════════
+   SHOW WIN
+══════════════════════════════════════════════ */
+function showWin() {
+  const totalTime = Date.now() - game.startTime;
+  let rank = '';
+  if (game.totalScore>=30000) rank='🏆 DIOS DE LA LÓGICA';
+  else if (game.totalScore>=25000) rank='👑 LEYENDA';
+  else if (game.totalScore>=20000) rank='⭐ MAESTRO';
+  else if (game.totalScore>=15000) rank='🥇 EXPERTO';
+  else if (game.totalScore>=10000) rank='🥈 AVANZADO';
+  else rank='🥉 APRENDIZ';
+
+  document.getElementById('win-rank').textContent = rank;
+  document.getElementById('ws-score').textContent = game.totalScore;
+  document.getElementById('ws-time').textContent = formatTime(totalTime);
+  document.getElementById('ws-lvl').textContent = '25/25';
+  document.getElementById('ws-avg').textContent = Math.floor(game.totalScore/25);
+  document.getElementById('win-screen').classList.add('show');
+}
+
+/* ══════════════════════════════════════════════
+   START GAME
+══════════════════════════════════════════════ */
+function startGame() {
+  game.currentLevel = 0;
+  game.totalScore = 0;
+  game.startTime = Date.now();
+  game.attempts = 0;
+
+  document.getElementById('intro-screen').style.display = 'none';
+  document.getElementById('topbar').style.display = 'flex';
+  document.getElementById('game-wrap').style.display = 'flex';
+
+  const level = levels[0];
+  generateRandomTraps(level);
+  game.pos = {...level.start};
+  game.gems = [];
+  game.energy = level.maxEnergy;
+  game.completed = false;
+
+  // Populate static UI elements
+  updateTopbar();
+  loadLevelMeta();
+  renderGrid();
+  updateUI();
+  renderCmdBlocks();
+
+  setInterval(updateTimer, 1000);
+}
+
+function loadLevelMeta() {
+  const level = levels[game.currentLevel];
+  document.getElementById('level-name').textContent = `Nivel ${level.id}: ${level.name}`;
+  document.getElementById('obj-text').textContent = level.objective;
+  document.getElementById('hint-strip').textContent = `💡 Pista: ${level.hint}`;
+  document.getElementById('loop-warning').style.display = level.loopRequired ? 'block' : 'none';
+  updateTopbar();
+}
+
+// Re-render grid on resize (handles orientation changes)
+window.addEventListener('resize', () => { if (game.startTime) renderGrid(); });
+</script>
+</body>
+</html>
